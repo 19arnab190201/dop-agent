@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClientCard } from "@/components/cards/ClientCard";
+import { AddClientDialog } from "@/components/dialogs/AddClientDialog";
 import type { ClientRollup } from "@/lib/queries";
 
 type SortKey = "name" | "liability" | "status" | "nearestDue";
@@ -48,6 +49,11 @@ export function ClientsListView({ rollups }: { rollups: ClientRollup[] }) {
 
   return (
     <div className="flex flex-col gap-3 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-lg font-semibold">Clients</h1>
+        <AddClientDialog />
+      </div>
+
       <div className="flex gap-2">
         <Input placeholder="Search name or account no..." value={query} onChange={(e) => setQuery(e.target.value)} className="flex-1" />
         <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>

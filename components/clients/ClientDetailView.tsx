@@ -12,6 +12,7 @@ import { SummaryCard } from "@/components/cards/SummaryCard";
 import { CollectSheet, type CollectTarget } from "@/components/sheets/CollectSheet";
 import { ReminderSheet, reminderSheetKey, type ReminderTarget } from "@/components/sheets/ReminderSheet";
 import { NoteDialog } from "@/components/dialogs/NoteDialog";
+import { AddAccountDialog } from "@/components/dialogs/AddAccountDialog";
 import { statusLabel, statusDotClass } from "@/lib/derive";
 import { formatINR, formatDateDisplay } from "@/lib/format";
 import { buildTelLink, formatAccountsListForMessage } from "@/lib/messages";
@@ -140,6 +141,11 @@ export function ClientDetailView({
         <SummaryCard icon={AlertCircle} label="Overdue" value={formatINR(rollup.totalOverdueAmount)} accentClassName="text-red-500" />
         <SummaryCard icon={CalendarClock} label="Next due" value={rollup.nearestDueDate ? formatDateDisplay(rollup.nearestDueDate) : "—"} />
         <SummaryCard icon={PiggyBank} label="Corpus paid" value={formatINR(rollup.totalCorpusPaid)} />
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold">Accounts</h2>
+        <AddAccountDialog clientId={client.id} />
       </div>
 
       <Accordion className="flex flex-col gap-2">

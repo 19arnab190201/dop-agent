@@ -71,6 +71,11 @@ export async function getClientDetail(clientId: string): Promise<ClientRollup | 
   return rollupByClient(group)[0];
 }
 
+export async function getAccountDetail(accountId: string): Promise<AccountWithClient | null> {
+  const all = await getAllAccountsWithClients();
+  return all.find((a) => a.id === accountId) ?? null;
+}
+
 export async function getCollectionsForAccount(accountId: string) {
   return db.select().from(collections).where(eq(collections.accountId, accountId)).orderBy(desc(collections.date));
 }

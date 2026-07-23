@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, MessageCircle, Phone, NotebookPen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,9 +32,25 @@ export function AccountCard({
   className?: string;
 }) {
   const amount = account.monthsOverdue > 0 ? account.amountToClear : account.denomination;
+  const router = useRouter();
+
+  function openDetail() {
+    router.push(`/accounts/${account.id}`);
+  }
 
   return (
-    <Card className={cn("gap-2 py-3", className)}>
+    <Card
+      className={cn("cursor-pointer gap-2 py-3", className)}
+      role="link"
+      tabIndex={0}
+      onClick={openDetail}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openDetail();
+        }
+      }}
+    >
       <CardContent className="flex flex-col gap-2 px-4">
         <div className="flex items-start justify-between gap-2">
           <div className="font-medium">{clientName}</div>
@@ -61,7 +80,7 @@ export function AccountCard({
           </Badge>
         </div>
         {extraInfo}
-        <div className="mt-1 grid grid-cols-3 gap-2">
+        <div className="mt-1 grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" variant="default" onClick={() => onCollect?.(account)}>
             <CheckCircle2 />
             Collect

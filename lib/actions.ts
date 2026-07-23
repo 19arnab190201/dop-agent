@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { eq, inArray, sql } from "drizzle-orm";
+import { addMonths, format } from "date-fns";
 import { db } from "@/db";
 import { accounts, clients, collections, reportImports, messageTemplates, appSettings } from "@/db/schema";
 import { parseDopReport, type ParsedAccountRow } from "@/lib/parser";
@@ -122,6 +123,60 @@ export async function updateClient(
     .set({ ...input, updatedAt: sql`now()` })
     .where(eq(clients.id, clientId));
   revalidatePath("/clients");
+}
+
+export async function createClient(input: { displayName: string; phone?: string | null }) {
+  const displayName = input.displayName.trim();
+  if (!displayName) throw new Error("Name is required");
+  const normalizedName = normalizeName(displayName);
+
+  const existing = await db.select({ id: clients.id }).from(clients).where(eq(clients.normalizedName, normalizedName)).limit(1);
+  if (existing.length > 0) throw new Error(`A client named "${displayName}" already exists`);
+
+  const [created] = await db
+    .insert(clients)
+    .values({ normalizedName, displayName, phone: input.phone || null })
+    .returning();
+
+  revalidatePath("/clients");
+  return created;
+}
+
+// Mirrors the nextDueDate = openingDate + (monthsPaid + 1) months convention already used by
+// db/backfill-opening-dates.ts, so a manually-added account lines up with imported ones.
+function computeNextDueDate(openingDate: string, monthsPaid: number): string {
+  return format(addMonths(new Date(`${openingDate}T00:00:00`), monthsPaid + 1), "yyyy-MM-dd");
+}
+
+export async function createAccount(input: {
+  clientId: string;
+  accountId: string;
+  denomination: number;
+  monthsPaid: number;
+  openingDate?: string | null;
+  interestRate?: number;
+}) {
+  const accountId = input.accountId.trim();
+  if (!accountId) throw new Error("Account number is required");
+
+  const existing = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.id, accountId)).limit(1);
+  if (existing.length > 0) throw new Error(`Account ${accountId} already exists`);
+
+  const [client] = await db.select({ displayName: clients.displayName }).from(clients).where(eq(clients.id, input.clientId)).limit(1);
+  if (!client) throw new Error("Client not found");
+
+  await db.insert(accounts).values({
+    id: accountId,
+    clientId: input.clientId,
+    accountName: client.displayName,
+    denomination: input.denomination.toString(),
+    monthsPaid: input.monthsPaid,
+    openingDate: input.openingDate || null,
+    nextDueDate: input.openingDate ? computeNextDueDate(input.openingDate, input.monthsPaid) : null,
+    ...(input.interestRate !== undefined ? { interestRate: input.interestRate.toString() } : {}),
+  });
+
+  revalidatePath("/", "layout");
 }
 
 export async function mergeClients(primaryId: string, secondaryId: string) {
