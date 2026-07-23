@@ -1,9 +1,20 @@
+import { Suspense } from "react";
 import { ReportsView } from "@/components/reports/ReportsView";
-import { getAllAccountsWithClients, getAllCollections, getEffectiveRdRules } from "@/lib/queries";
+import { PageSkeleton } from "@/components/layout/PageSkeleton";
+import { getAllAccountsWithClients, getAllCollections, getEffectiveRdRules, getRequestToday } from "@/lib/queries";
 
-export default async function ReportsPage() {
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <ReportsPageContent />
+    </Suspense>
+  );
+}
+
+async function ReportsPageContent() {
+  const today = await getRequestToday();
   const [accounts, collections, rules] = await Promise.all([
-    getAllAccountsWithClients(),
+    getAllAccountsWithClients(today),
     getAllCollections(),
     getEffectiveRdRules(),
   ]);

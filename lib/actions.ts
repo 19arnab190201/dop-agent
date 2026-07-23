@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { eq, inArray, sql } from "drizzle-orm";
 import { addMonths, format } from "date-fns";
 import { db } from "@/db";
@@ -79,6 +79,8 @@ export async function commitImport(rawText: string) {
     diff,
   });
 
+  updateTag("accounts");
+  updateTag("imports");
   revalidatePath("/", "layout");
   return diff;
 }
@@ -91,11 +93,13 @@ export async function markCollected(input: {
   date: string;
 }) {
   await db.insert(collections).values({ ...input, amount: input.amount.toString() });
+  updateTag("collections");
   revalidatePath("/", "layout");
 }
 
 export async function markDepositedToPO(collectionIds: number[]) {
   await db.update(collections).set({ depositedToPO: true }).where(inArray(collections.id, collectionIds));
+  updateTag("collections");
   revalidatePath("/", "layout");
 }
 
@@ -111,6 +115,7 @@ export async function updateAccountDetails(
       updatedAt: sql`now()`,
     })
     .where(eq(accounts.id, accountId));
+  updateTag("accounts");
   revalidatePath("/", "layout");
 }
 
@@ -122,6 +127,7 @@ export async function updateClient(
     .update(clients)
     .set({ ...input, updatedAt: sql`now()` })
     .where(eq(clients.id, clientId));
+  updateTag("accounts");
   revalidatePath("/clients");
 }
 
@@ -138,6 +144,7 @@ export async function createClient(input: { displayName: string; phone?: string 
     .values({ normalizedName, displayName, phone: input.phone || null })
     .returning();
 
+  updateTag("accounts");
   revalidatePath("/clients");
   return created;
 }
@@ -176,6 +183,7 @@ export async function createAccount(input: {
     ...(input.interestRate !== undefined ? { interestRate: input.interestRate.toString() } : {}),
   });
 
+  updateTag("accounts");
   revalidatePath("/", "layout");
 }
 
@@ -190,6 +198,7 @@ export async function mergeClients(primaryId: string, secondaryId: string) {
   await db.update(clients).set(merged).where(eq(clients.id, primaryId));
   await db.delete(clients).where(eq(clients.id, secondaryId));
 
+  updateTag("accounts");
   revalidatePath("/clients");
 }
 
@@ -198,6 +207,7 @@ export async function updateAppSetting(key: string, value: unknown) {
     .insert(appSettings)
     .values({ key, value })
     .onConflictDoUpdate({ target: appSettings.key, set: { value } });
+  updateTag("settings");
   revalidatePath("/settings");
 }
 
@@ -213,6 +223,7 @@ export async function upsertMessageTemplate(key: string, language: "en" | "hi", 
   } else {
     await db.insert(messageTemplates).values({ key, language, body });
   }
+  updateTag("settings");
   revalidatePath("/settings");
 }
 
@@ -262,6 +273,10 @@ export async function restoreBackup(backup: Backup) {
   for (const s of backup.appSettings) {
     await db.insert(appSettings).values(s).onConflictDoUpdate({ target: appSettings.key, set: { value: s.value } });
   }
+  updateTag("accounts");
+  updateTag("collections");
+  updateTag("settings");
+  updateTag("imports");
   revalidatePath("/", "layout");
 }
 
@@ -272,5 +287,9 @@ export async function clearAllData() {
   await db.delete(reportImports);
   await db.delete(messageTemplates);
   await db.delete(appSettings);
+  updateTag("accounts");
+  updateTag("collections");
+  updateTag("settings");
+  updateTag("imports");
   revalidatePath("/", "layout");
 }

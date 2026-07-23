@@ -1,9 +1,20 @@
+import { Suspense } from "react";
 import { CommissionView } from "@/components/commission/CommissionView";
-import { getAllAccountsWithClients, rollupByClient, getAllCollections, getEffectiveRdRules } from "@/lib/queries";
+import { PageSkeleton } from "@/components/layout/PageSkeleton";
+import { getAllAccountsWithClients, rollupByClient, getAllCollections, getEffectiveRdRules, getRequestToday } from "@/lib/queries";
 
-export default async function CommissionPage() {
+export default function CommissionPage() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <CommissionPageContent />
+    </Suspense>
+  );
+}
+
+async function CommissionPageContent() {
+  const today = await getRequestToday();
   const [accounts, collections, rules] = await Promise.all([
-    getAllAccountsWithClients(),
+    getAllAccountsWithClients(today),
     getAllCollections(),
     getEffectiveRdRules(),
   ]);

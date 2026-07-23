@@ -1,15 +1,27 @@
+import { Suspense } from "react";
 import { SettingsView } from "@/components/settings/SettingsView";
+import { PageSkeleton } from "@/components/layout/PageSkeleton";
 import {
   getAllAccountsWithClients,
   rollupByClient,
   getEffectiveRdRules,
   getEffectiveTemplates,
   getLanguage,
+  getRequestToday,
 } from "@/lib/queries";
 
-export default async function SettingsPage() {
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <SettingsPageContent />
+    </Suspense>
+  );
+}
+
+async function SettingsPageContent() {
+  const today = await getRequestToday();
   const [accounts, rules, templates, language] = await Promise.all([
-    getAllAccountsWithClients(),
+    getAllAccountsWithClients(today),
     getEffectiveRdRules(),
     getEffectiveTemplates(),
     getLanguage(),

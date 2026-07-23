@@ -1,9 +1,20 @@
+import { Suspense } from "react";
 import { OverdueView } from "@/components/overdue/OverdueView";
-import { getAllAccountsWithClients, getLanguage, getEffectiveTemplates } from "@/lib/queries";
+import { PageSkeleton } from "@/components/layout/PageSkeleton";
+import { getAllAccountsWithClients, getLanguage, getEffectiveTemplates, getRequestToday } from "@/lib/queries";
 
-export default async function OverduePage() {
+export default function OverduePage() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <OverduePageContent />
+    </Suspense>
+  );
+}
+
+async function OverduePageContent() {
+  const today = await getRequestToday();
   const [accounts, language, templates] = await Promise.all([
-    getAllAccountsWithClients(),
+    getAllAccountsWithClients(today),
     getLanguage(),
     getEffectiveTemplates(),
   ]);

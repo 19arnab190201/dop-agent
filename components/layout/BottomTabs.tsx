@@ -7,14 +7,12 @@ import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "./nav-items";
 import { MoreSheet } from "./MoreSheet";
 
-export function BottomTabs() {
-  const pathname = usePathname();
-
+function BottomTabsShell({ activeHref }: { activeHref: string | null }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background lg:hidden">
       <div className="grid grid-cols-5">
         {PRIMARY_NAV.map((item) => {
-          const active = pathname === item.href;
+          const active = item.href === activeHref;
           const Icon = item.icon;
           return (
             <Link
@@ -39,4 +37,15 @@ export function BottomTabs() {
       </div>
     </nav>
   );
+}
+
+// usePathname() is request-scoped route state — wrapped in <Suspense> in layout.tsx, with
+// BottomTabsSkeleton as the pathname-free fallback so the static shell can still prerender.
+export function BottomTabs() {
+  const pathname = usePathname();
+  return <BottomTabsShell activeHref={pathname} />;
+}
+
+export function BottomTabsSkeleton() {
+  return <BottomTabsShell activeHref={null} />;
 }

@@ -1,10 +1,21 @@
+import { Suspense } from "react";
 import { TodayView } from "@/components/today/TodayView";
-import { getAllAccountsWithClients, getCollectionsToday, getLanguage, getEffectiveTemplates } from "@/lib/queries";
+import { PageSkeleton } from "@/components/layout/PageSkeleton";
+import { getAllAccountsWithClients, getCollectionsToday, getLanguage, getEffectiveTemplates, getRequestToday } from "@/lib/queries";
 
-export default async function TodayPage() {
-  const todayIso = new Date().toISOString().slice(0, 10);
+export default function TodayPage() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <TodayPageContent />
+    </Suspense>
+  );
+}
+
+async function TodayPageContent() {
+  const today = await getRequestToday();
+  const todayIso = today.toISOString().slice(0, 10);
   const [accounts, collectionsToday, language, templates] = await Promise.all([
-    getAllAccountsWithClients(),
+    getAllAccountsWithClients(today),
     getCollectionsToday(todayIso),
     getLanguage(),
     getEffectiveTemplates(),
