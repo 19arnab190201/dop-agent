@@ -25,3 +25,10 @@ export function TopBar({
     </header>
   );
 }
+
+// lastImportAt/searchIndex come from a Suspense-wrapped, connection()-gated fetch in layout.tsx
+// (so it's request-time, not eagerly filled during `next build`) — this fallback keeps the same
+// header shape (no badge, no search index yet) so there's no layout shift while that streams in.
+export function TopBarSkeleton() {
+  return <TopBar lastImportAt={null} searchIndex={[]} />;
+}
